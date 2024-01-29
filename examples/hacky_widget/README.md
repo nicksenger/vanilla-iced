@@ -1,0 +1,1 @@
+This example demonstrates the incorporation of Vanilla Iced's YUV shader into a hacky widget. The widget acts as a "sink" for a "stream" of frames produced by an implementor of `VideoStream`. It _can_ be used to display video in a completely single-threaded context, if necessary.

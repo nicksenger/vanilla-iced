@@ -1,0 +1,16 @@
+[package]
+name = "iced_iced_baby"
+version = "0.1.0"
+authors = ["Nick Senger <dev@nsenger.com>"]
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1.0"
+gstreamer = "0.17"
+gstreamer-app = "0.17"
+hacky_widget.workspace = true
+iced.workspace = true
+num-rational = "0.4"
+num-traits = "0.2"
+vanilla_iced.workspace = true

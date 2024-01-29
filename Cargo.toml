@@ -1,0 +1,47 @@
+[package]
+name = "vanilla_iced"
+description = "Iced YUV shader"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
+all-features = true
+
+[dependencies]
+bytemuck.workspace = true
+glam = { workspace = true, features = ["bytemuck"] }
+iced.workspace = true
+iced_wgpu.workspace = true
+
+[workspace]
+resolver = "2"
+members = [
+    "examples/*",
+]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Nick Senger <dev@nsenger.com>"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/nicksenger/vanilla_iced"
+categories = ["gui"]
+keywords = ["gui", "ui", "graphics", "audio", "video", "widgets"]
+
+[workspace.dependencies]
+decoders = { path = "./examples/decoders" }
+hacky_widget = { path = "./examples/hacky_widget" }
+vanilla_iced = { version = "0.1", path = "." }
+
+
+bytemuck = { version = "1.0", features = ["derive"] }
+glam = "0.24"
+iced = { git = "https://github.com/iced-rs/iced", features = ["advanced", "image", "lazy", "wgpu"] }
+iced_wgpu = { git = "https://github.com/iced-rs/iced" }
+thiserror = "1.0"
