@@ -10,8 +10,9 @@ use iced::widget::Shader;
 use iced::window::RedrawRequest;
 use iced::{window, Size};
 use iced::{Element, Length, Rectangle};
-use vanilla_iced::yuv;
 use web_time::Instant;
+
+use vanilla_iced::{Format, Program, Yuv};
 
 mod types;
 
@@ -19,20 +20,17 @@ pub use types::VideoStream;
 
 const PLAYBACK_RATE: f32 = 1.0;
 
-pub struct Video<'a, T> {
+pub struct Video<'a> {
     width: Length,
     height: Length,
     frame_duration: Duration,
-    content: Box<dyn VideoStream<T> + 'a>,
+    content: Box<dyn VideoStream + 'a>,
     video_width: u32,
     video_height: u32,
 }
 
-impl<'a, T> Video<'a, T>
-where
-    T: AsRef<[u8]>,
-{
-    pub fn new(content: impl VideoStream<T> + 'a) -> Self {
+impl<'a> Video<'a> {
+    pub fn new(content: impl VideoStream + 'a) -> Self {
         Self {
             width: Length::Fill,
             height: Length::Fill,
@@ -56,17 +54,16 @@ where
     }
 }
 
-impl<'a, T, Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Video<'a, T>
+impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Video<'a>
 where
     Renderer: iced::advanced::Renderer + iced_wgpu::primitive::pipeline::Renderer,
-    T: AsRef<[u8]> + std::fmt::Debug + Send + Sync + Default + 'static,
 {
     fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<State<T>>()
+        tree::Tag::of::<State>()
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(State::<T>::new(
+        tree::State::new(State::new(
             self.video_width as f32,
             self.video_height as f32,
         ))
@@ -86,9 +83,9 @@ where
         limits: &layout::Limits,
     ) -> layout::Node {
         let shader: Element<'_, Message, Theme, Renderer> = {
-            let state = tree.state.downcast_ref::<State<T>>();
+            let state = tree.state.downcast_ref::<State>();
             Element::from(
-                Shader::<Message, &yuv::Program<T>>::new(&state.program)
+                Shader::<Message, &Program>::new(&state.program)
                     .width(self.width)
                     .height(self.height),
             )
@@ -109,7 +106,7 @@ where
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) -> event::Status {
-        let state = tree.state.downcast_mut::<State<T>>();
+        let state = tree.state.downcast_mut::<State>();
 
         let mut progress_frame = |i| {
             if let Some(frame) = self.content.next(i) {
@@ -150,9 +147,9 @@ where
         cursor: Cursor,
         viewport: &Rectangle,
     ) {
-        let state = tree.state.downcast_ref::<State<T>>();
+        let state = tree.state.downcast_ref::<State>();
 
-        let shader = Element::from(Shader::<Message, &yuv::Program<T>>::new(&state.program));
+        let shader = Element::from(Shader::<Message, &Program>::new(&state.program));
         shader.as_widget().draw(
             &Tree::new(&shader),
             renderer,
@@ -165,39 +162,29 @@ where
     }
 }
 
-impl<'a, T, Message, Theme, Renderer> From<Video<'a, T>> for Element<'a, Message, Theme, Renderer>
+impl<'a, Message, Theme, Renderer> From<Video<'a>> for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a,
     Renderer: iced::advanced::Renderer + iced_wgpu::primitive::pipeline::Renderer + 'a,
-    T: AsRef<[u8]> + std::fmt::Debug + Send + Sync + Default + 'static,
 {
-    fn from(video: Video<'a, T>) -> Self {
+    fn from(video: Video<'a>) -> Self {
         Self::new(video)
     }
 }
 
-struct State<T> {
-    program: yuv::Program<T>,
+struct State {
+    program: Program,
     last_draw: Option<Instant>,
     first_draw: Option<Instant>,
 }
 
-impl<T> State<T>
-where
-    T: AsRef<[u8]> + std::fmt::Debug + Send + Sync + Default + 'static,
-{
+impl State {
     fn new(image_width: f32, image_height: f32) -> Self {
         Self {
-            program: yuv::Program::new(yuv::Frame {
-                strides: yuv::Strides { y: 0, u: 0, v: 0 },
-                dimensions: yuv::Dimensions {
-                    y: (image_width, image_height).into(),
-                    u: (image_width / 2.0, image_height / 2.0).into(),
-                    v: (image_width / 2.0, image_height / 2.0).into(),
-                },
-                y: Default::default(),
-                u: Default::default(),
-                v: Default::default(),
+            program: Program::new(Yuv {
+                format: Format::Y444,
+                data: vec![],
+                dimensions: (image_width, image_height).into(),
             }),
             last_draw: None,
             first_draw: None,

@@ -12,16 +12,13 @@ Check out the [examples](./examples) to see it in action!
 ```rust
 fn view(&self) -> Element<Message> {
     // Get some YUV
-    let yuv = vanilla_iced::yuv::Frame {
-        strides: { .. } // Strides for each plane
-        dimensions: { .. } // Dimensions for each plane,
-        y: vec![..] // Luma data
-        u: vec![..] // U chroma data
-        v: vec![..] // V chroma data
+    let yuv = vanilla_iced::Yuv {
+        format: Format::I420, // yuv format
+        data: vec![..] // raw yuv data
     };
 
     // Render it
-    iced::widget::shader(vanilla_iced::yuv::Program::new(yuv)).into()
+    iced::widget::shader(vanilla_iced::Program::new(yuv)).into()
 }
 
 fn update(&mut self, message: Message) -> iced::Command<Message> {
@@ -37,6 +34,7 @@ fn update(&mut self, message: Message) -> iced::Command<Message> {
 ### Goals
 
 - [x] Render I420
+- [x] Render Y444
 - [ ] Support other common YUV formats
 
 ### Motivations

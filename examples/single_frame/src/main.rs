@@ -1,7 +1,7 @@
 use iced::{widget::shader, Element, Length, Sandbox, Settings};
-
 use serde::{Deserialize, Serialize};
-use vanilla_iced::yuv;
+
+use vanilla_iced::{Format, Program, Size, Yuv};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MyYuv {
@@ -14,31 +14,19 @@ pub struct MyYuv {
     pub v: Vec<u8>,
 }
 
-impl From<MyYuv> for yuv::Frame<Vec<u8>> {
+impl From<MyYuv> for Yuv {
     fn from(data: MyYuv) -> Self {
+        let mut bytes = data.y;
+        bytes.extend(data.u);
+        bytes.extend(data.v);
+
         Self {
-            strides: yuv::Strides {
-                y: data.strides.0,
-                u: data.strides.1,
-                v: data.strides.2,
+            format: Format::I420,
+            dimensions: Size {
+                width: data.y_dim.0 as f32,
+                height: data.y_dim.1 as f32,
             },
-            dimensions: yuv::Dimensions {
-                y: yuv::Size {
-                    width: data.y_dim.0 as f32,
-                    height: data.y_dim.1 as f32,
-                },
-                u: yuv::Size {
-                    width: data.u_dim.0 as f32,
-                    height: data.u_dim.1 as f32,
-                },
-                v: yuv::Size {
-                    width: data.v_dim.0 as f32,
-                    height: data.v_dim.1 as f32,
-                },
-            },
-            y: data.y,
-            u: data.u,
-            v: data.v,
+            data: bytes,
         }
     }
 }
@@ -73,7 +61,7 @@ impl Sandbox for App {
 
         add_d(&mut yuv);
 
-        shader(yuv::Program::new(yuv.into()))
+        shader(Program::new(yuv.into()))
             .width(Length::Fill)
             .height(Length::Fill)
             .into()

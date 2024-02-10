@@ -1,4 +1,5 @@
 struct Uniforms {
+    sampling_factor: vec2<f32>,
     size: vec2<f32>,
     image_dimensions: vec2<f32>,
     scale: vec2<f32>,
@@ -40,8 +41,8 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     let y = textureSample(yuv_texture, yuv_sampler, input.uv, 0) * 255.0;
-    let u = textureSample(yuv_texture, yuv_sampler, input.uv / 2.0, 1) * 255.0;
-    let v = textureSample(yuv_texture, yuv_sampler, input.uv / 2.0, 2) * 255.0;
+    let u = textureSample(yuv_texture, yuv_sampler, input.uv / uniforms.sampling_factor, 1) * 255.0;
+    let v = textureSample(yuv_texture, yuv_sampler, input.uv / uniforms.sampling_factor, 2) * 255.0;
 
     return vec4<f32>(
         clamp((1.164 * (y.x - 16.0) + 1.596 * (v.x - 128.0)) / 255.0, 0.0, 1.0),

@@ -15,6 +15,7 @@ iced = { workspace = true, optional = true }
 vanilla_iced = { workspace = true, optional = true }
 
 [features]
+default = ["bin"]
 bin = ["hacky_widget", "iced", "vanilla_iced"]
 
 [[bin]]

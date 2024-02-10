@@ -5,9 +5,9 @@ pub mod video;
 #[cfg(feature = "bin")]
 mod widget {
     use hacky_widget::VideoStream;
-    use vanilla_iced::yuv;
+    use vanilla_iced::{Format, Size, Yuv};
 
-    impl<'a> VideoStream<Vec<u8>> for crate::video::h264::Stream<'a> {
+    impl<'a> VideoStream for crate::video::h264::Stream<'a> {
         fn width(&self) -> u32 {
             self.width()
         }
@@ -20,36 +20,24 @@ mod widget {
             self.frame_rate()
         }
 
-        fn next(&mut self, i: usize) -> Option<yuv::Frame<Vec<u8>>> {
+        fn next(&mut self, i: usize) -> Option<Yuv> {
             self.next_frame(i).map(Into::into)
         }
     }
 
-    impl From<crate::video::h264::SomeYuv> for yuv::Frame<Vec<u8>> {
+    impl From<crate::video::h264::SomeYuv> for Yuv {
         fn from(data: crate::video::h264::SomeYuv) -> Self {
+            let mut bytes = data.y;
+            bytes.extend(data.u);
+            bytes.extend(data.v);
+
             Self {
-                strides: yuv::Strides {
-                    y: data.strides.0,
-                    u: data.strides.1,
-                    v: data.strides.2,
+                format: Format::I420,
+                dimensions: Size {
+                    width: data.y_dim.0 as f32,
+                    height: data.y_dim.1 as f32,
                 },
-                dimensions: yuv::Dimensions {
-                    y: yuv::Size {
-                        width: data.y_dim.0 as f32,
-                        height: data.y_dim.1 as f32,
-                    },
-                    u: yuv::Size {
-                        width: data.u_dim.0 as f32,
-                        height: data.u_dim.1 as f32,
-                    },
-                    v: yuv::Size {
-                        width: data.v_dim.0 as f32,
-                        height: data.v_dim.1 as f32,
-                    },
-                },
-                y: data.y,
-                u: data.u,
-                v: data.v,
+                data: bytes,
             }
         }
     }

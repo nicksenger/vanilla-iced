@@ -1,39 +1,73 @@
-mod pipeline;
+#[derive(Debug)]
+/// Supported internal types for rendering
+pub(crate) enum Renderable {
+    Y444 { data: Vec<u8>, dimensions: Size },
+    I420 { data: Vec<u8>, dimensions: Size },
+}
 
-use std::cell::RefCell;
-use std::ops::Deref;
-use std::sync::Mutex;
+impl Renderable {
+    pub fn dimensions(&self) -> Size {
+        match self {
+            Self::I420 { dimensions, .. } | Self::Y444 { dimensions, .. } => *dimensions,
+        }
+    }
 
-use pipeline::Pipeline;
+    pub fn y(&self) -> &[u8] {
+        match self {
+            Self::I420 { data, .. } => &data[..data.len() / 6 * 4],
+            Self::Y444 { data, .. } => &data[..data.len() / 3],
+        }
+    }
 
-use iced::mouse;
-use iced::widget::shader;
-use iced::Rectangle;
-use shader::wgpu;
+    pub fn u(&self) -> &[u8] {
+        match self {
+            Self::I420 { data, .. } => &data[data.len() / 6 * 4..data.len() / 6 * 5],
+            Self::Y444 { data, .. } => &data[data.len() / 3..data.len() / 3 * 2],
+        }
+    }
 
-use self::pipeline::Uniforms;
+    pub fn v(&self) -> &[u8] {
+        match self {
+            Self::I420 { data, .. } => &data[data.len() / 6 * 5..],
+            Self::Y444 { data, .. } => &data[data.len() / 3 * 2..],
+        }
+    }
 
-#[derive(Debug, Clone)]
-pub struct Frame<T> {
-    pub strides: Strides,
-    pub dimensions: Dimensions,
-    pub y: T,
-    pub u: T,
-    pub v: T,
+    pub fn sampling_factor(&self) -> f32 {
+        match self {
+            Self::I420 { .. } => 2.0,
+            Self::Y444 { .. } => 1.0
+        }
+    }
+}
+
+/// Supported YUV formats
+#[derive(Clone, Copy, Debug)]
+pub enum Format {
+    I420,
+    Y444,
 }
 
 #[derive(Debug, Clone)]
-pub struct Strides {
-    pub y: usize,
-    pub u: usize,
-    pub v: usize,
+pub struct Yuv {
+    pub format: Format,
+    pub data: Vec<u8>,
+    pub dimensions: Size,
 }
 
-#[derive(Debug, Clone)]
-pub struct Dimensions {
-    pub y: Size,
-    pub u: Size,
-    pub v: Size,
+impl From<Yuv> for Renderable {
+    fn from(yuv: Yuv) -> Self {
+        match yuv.format {
+            Format::I420 => Renderable::I420 {
+                data: yuv.data,
+                dimensions: yuv.dimensions,
+            },
+            Format::Y444 => Renderable::Y444 {
+                data: yuv.data,
+                dimensions: yuv.dimensions,
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -67,161 +101,6 @@ impl From<iced::Size<f32>> for Size {
         Self {
             width: size.width,
             height: size.height,
-        }
-    }
-}
-
-pub struct Program<T> {
-    dimensions: Size,
-    data: RefCell<Option<Frame<T>>>,
-}
-
-impl<T> Program<T>
-where
-    T: AsRef<[u8]> + std::fmt::Debug + Send + Sync + 'static,
-{
-    pub fn new(frame: Frame<T>) -> Self {
-        Self {
-            dimensions: frame.dimensions.y,
-            data: RefCell::new(Some(frame)),
-        }
-    }
-
-    pub fn update_frame(&mut self, frame: Frame<T>) {
-        *self.data.borrow_mut() = Some(frame);
-    }
-}
-
-impl<Message, T> shader::Program<Message> for Program<T>
-where
-    T: AsRef<[u8]> + std::fmt::Debug + Send + Sync + 'static,
-{
-    type State = ();
-    type Primitive = Primitive<T>;
-
-    fn draw(
-        &self,
-        _state: &Self::State,
-        _cursor: mouse::Cursor,
-        bounds: Rectangle,
-    ) -> Self::Primitive {
-        Primitive(Mutex::new(match self.data.borrow_mut().take() {
-            Some(frame) => State::Pending { frame, bounds },
-
-            _ => State::Prepared {
-                bounds,
-                image_dimensions: self.dimensions,
-            },
-        }))
-    }
-}
-
-#[derive(Debug)]
-pub struct Primitive<T>(Mutex<State<T>>);
-
-#[derive(Debug)]
-enum State<T> {
-    Pending {
-        frame: Frame<T>,
-        bounds: Rectangle,
-    },
-    Prepared {
-        image_dimensions: Size,
-        bounds: Rectangle,
-    },
-}
-
-impl<T> State<T> {
-    fn bounds(&self) -> Rectangle {
-        match self {
-            Self::Pending { bounds, .. } | Self::Prepared { bounds, .. } => *bounds,
-        }
-    }
-
-    fn image_dimensions(&self) -> Size {
-        match self {
-            Self::Prepared {
-                image_dimensions, ..
-            } => *image_dimensions,
-            Self::Pending { frame, .. } => frame.dimensions.y,
-        }
-    }
-}
-
-impl<T> shader::Primitive for Primitive<T>
-where
-    T: AsRef<[u8]> + std::fmt::Debug + Send + Sync + 'static,
-{
-    fn prepare(
-        &self,
-        format: wgpu::TextureFormat,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        bounds: Rectangle,
-        target_size: iced::Size<u32>,
-        scale_factor: f32,
-        storage: &mut shader::Storage,
-    ) {
-        let Ok(mut state) = self.0.lock() else {
-            return;
-        };
-
-        let size = Size::from(bounds.size()) * scale_factor;
-        let target_size = Size {
-            width: target_size.width as f32,
-            height: target_size.height as f32,
-        };
-
-        match state.deref() {
-            State::Pending { frame, .. } => {
-                if !storage.has::<Pipeline>() {
-                    storage.store(Pipeline::new(
-                        device,
-                        format,
-                        frame.dimensions.y,
-                        target_size,
-                        size,
-                        scale_factor,
-                    ));
-                }
-
-                let pipeline = storage.get_mut::<Pipeline>().expect("yuv pipeline");
-
-                pipeline
-                    .update_uniforms(queue, &Uniforms::new(size, frame.dimensions.y, target_size));
-                pipeline.update_frame(queue, frame);
-                pipeline.update_vertices(queue, frame.dimensions.y, size, target_size, scale_factor)
-            }
-
-            State::Prepared {
-                image_dimensions, ..
-            } => {
-                let pipeline = storage.get_mut::<Pipeline>().expect("yuv pipeline");
-
-                pipeline
-                    .update_uniforms(queue, &Uniforms::new(size, *image_dimensions, target_size));
-                pipeline.update_vertices(queue, *image_dimensions, size, target_size, scale_factor);
-            }
-        }
-
-        *state = State::Prepared {
-            bounds: state.bounds(),
-            image_dimensions: state.image_dimensions(),
-        }
-    }
-
-    fn render(
-        &self,
-        storage: &shader::Storage,
-        target: &wgpu::TextureView,
-        _target_size: iced::Size<u32>,
-        _viewport: Rectangle<u32>,
-        encoder: &mut wgpu::CommandEncoder,
-    ) {
-        let pipeline = storage.get::<Pipeline>().unwrap();
-
-        if let Ok(state) = self.0.lock() {
-            pipeline.render(target, encoder, state.bounds());
         }
     }
 }
