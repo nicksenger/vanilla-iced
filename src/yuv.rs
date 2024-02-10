@@ -42,6 +42,17 @@ pub struct Size {
     pub height: f32,
 }
 
+impl std::ops::Mul<f32> for Size {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self {
+            width: self.width * rhs,
+            height: self.height * rhs,
+        }
+    }
+}
+
 impl From<(f32, f32)> for Size {
     fn from(value: (f32, f32)) -> Self {
         Self {
@@ -148,13 +159,14 @@ where
         queue: &wgpu::Queue,
         bounds: Rectangle,
         target_size: iced::Size<u32>,
-        _scale_factor: f32,
+        scale_factor: f32,
         storage: &mut shader::Storage,
     ) {
         let Ok(mut state) = self.0.lock() else {
             return;
         };
 
+        let size = Size::from(bounds.size()) * scale_factor;
         let target_size = Size {
             width: target_size.width as f32,
             height: target_size.height as f32,
@@ -168,23 +180,17 @@ where
                         format,
                         frame.dimensions.y,
                         target_size,
-                        bounds.size().into(),
+                        size,
+                        scale_factor,
                     ));
                 }
 
                 let pipeline = storage.get_mut::<Pipeline>().expect("yuv pipeline");
 
-                pipeline.update_uniforms(
-                    queue,
-                    &Uniforms::new(bounds.size().into(), frame.dimensions.y, target_size),
-                );
+                pipeline
+                    .update_uniforms(queue, &Uniforms::new(size, frame.dimensions.y, target_size));
                 pipeline.update_frame(queue, frame);
-                pipeline.update_vertices(
-                    queue,
-                    frame.dimensions.y,
-                    bounds.size().into(),
-                    target_size,
-                )
+                pipeline.update_vertices(queue, frame.dimensions.y, size, target_size, scale_factor)
             }
 
             State::Prepared {
@@ -192,16 +198,9 @@ where
             } => {
                 let pipeline = storage.get_mut::<Pipeline>().expect("yuv pipeline");
 
-                pipeline.update_uniforms(
-                    queue,
-                    &Uniforms::new(bounds.size().into(), *image_dimensions, target_size),
-                );
-                pipeline.update_vertices(
-                    queue,
-                    *image_dimensions,
-                    bounds.size().into(),
-                    target_size,
-                );
+                pipeline
+                    .update_uniforms(queue, &Uniforms::new(size, *image_dimensions, target_size));
+                pipeline.update_vertices(queue, *image_dimensions, size, target_size, scale_factor);
             }
         }
 

@@ -19,6 +19,7 @@ pub struct Pipeline {
     texture: wgpu::Texture,
     texture_bind_group: wgpu::BindGroup,
     vertex_buffer: wgpu::Buffer,
+    scale_factor: f32,
 }
 
 impl Pipeline {
@@ -28,6 +29,7 @@ impl Pipeline {
         image_dimensions: Size,
         target_size: Size,
         size: Size,
+        scale_factor: f32,
     ) -> Self {
         let uniforms_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("yuv uniform buffer"),
@@ -205,6 +207,7 @@ impl Pipeline {
             texture,
             texture_bind_group,
             vertex_buffer,
+            scale_factor,
         }
     }
 
@@ -280,7 +283,9 @@ impl Pipeline {
         image_dimensions: Size,
         size: Size,
         target_size: Size,
+        scale_factor: f32,
     ) {
+        self.scale_factor = scale_factor;
         queue.write_buffer(
             &self.vertex_buffer,
             0,
@@ -312,8 +317,8 @@ impl Pipeline {
         pass.set_scissor_rect(
             bounds.x as u32,
             bounds.y as u32,
-            bounds.width as u32,
-            bounds.height as u32,
+            (bounds.width * self.scale_factor) as u32,
+            (bounds.height * self.scale_factor) as u32,
         );
 
         pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
