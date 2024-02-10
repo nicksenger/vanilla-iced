@@ -3042,6 +3042,7 @@ dependencies = [
  "glam 0.24.2",
  "iced",
  "iced_wgpu",
+ "itertools 0.12.1",
 ]
 
 [[package]]

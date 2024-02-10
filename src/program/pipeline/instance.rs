@@ -1,7 +1,7 @@
 use glam::Vec2;
 use iced::widget::shader::wgpu;
 
-use crate::yuv::Size;
+use crate::Size;
 
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 #[repr(C)]

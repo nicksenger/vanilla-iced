@@ -3,7 +3,8 @@ use std::sync::{Arc, Mutex};
 use anyhow::{anyhow, Result};
 use gstreamer::prelude::*;
 use num_traits::cast::ToPrimitive;
-use vanilla_iced::yuv;
+
+use vanilla_iced::{Format, Size, Yuv};
 
 #[derive(Clone, Debug, Default)]
 pub struct Bytes(Arc<Vec<u8>>);
@@ -19,7 +20,7 @@ pub struct Player {
     width: u32,
     height: u32,
     framerate: f64,
-    frame: Arc<Mutex<Option<yuv::Frame<Bytes>>>>,
+    frame: Arc<Mutex<Option<Yuv>>>,
 }
 
 impl Player {
@@ -36,7 +37,7 @@ impl Player {
             .to_path_buf();
         path.push("_sample_data/av1.mp4");
 
-        let source = gstreamer::parse_launch(&format!("playbin uri=\"file:///{}\" video-sink=\"videoconvert ! appsink name=app_sink caps=video/x-raw,format=I420\"", path.to_str().expect("path").replace('\\', "/")))?;
+        let source = gstreamer::parse_launch(&format!("playbin uri=\"file:///{}\" video-sink=\"videoconvert ! appsink name=app_sink caps=video/x-raw,format=Y444\"", path.to_str().expect("path").replace('\\', "/")))?;
         let source = source
             .downcast::<gstreamer::Bin>()
             .map_err(|_| anyhow!("downcast bin"))?;
@@ -73,34 +74,16 @@ impl Player {
                     let _s = caps.structure(0).ok_or(gstreamer::FlowError::Error)?;
 
                     let data = map.as_slice();
-                    let n = data.len() / 6;
 
-                    *frame_ref.lock().map_err(|_| gstreamer::FlowError::Error)? =
-                        Some(yuv::Frame {
-                            strides: yuv::Strides {
-                                y: (n * 4) / 720,
-                                u: n / 360,
-                                v: n / 360,
-                            },
-                            dimensions: yuv::Dimensions {
-                                // TODO: get these from gstreamer
-                                y: yuv::Size {
-                                    width: 1280.0,
-                                    height: 720.0,
-                                },
-                                u: yuv::Size {
-                                    width: 640.0,
-                                    height: 360.0,
-                                },
-                                v: yuv::Size {
-                                    width: 640.0,
-                                    height: 360.0,
-                                },
-                            },
-                            y: Bytes(Arc::new(data[0..(n * 4)].to_vec())),
-                            u: Bytes(Arc::new(data[(n * 4)..(n * 5)].to_vec())),
-                            v: Bytes(Arc::new(data[(n * 5)..].to_vec())),
-                        });
+                    *frame_ref.lock().map_err(|_| gstreamer::FlowError::Error)? = Some(Yuv {
+                        format: Format::Y444,
+                        // TODO: get this from gstreamer
+                        dimensions: Size {
+                            width: 1280.0,
+                            height: 720.0,
+                        },
+                        data: data.to_vec(),
+                    });
 
                     Ok(gstreamer::FlowSuccess::Ok)
                 })
@@ -132,7 +115,7 @@ impl Player {
         })
     }
 
-    fn frame(&self) -> Option<yuv::Frame<Bytes>> {
+    fn frame(&self) -> Option<Yuv> {
         self.frame.lock().expect("lock").clone()
     }
 }
@@ -143,7 +126,7 @@ impl Drop for Player {
     }
 }
 
-impl hacky_widget::VideoStream<Bytes> for Player {
+impl hacky_widget::VideoStream for Player {
     fn width(&self) -> u32 {
         self.width
     }
@@ -156,7 +139,7 @@ impl hacky_widget::VideoStream<Bytes> for Player {
         self.framerate
     }
 
-    fn next(&mut self, _i: usize) -> Option<yuv::Frame<Bytes>> {
+    fn next(&mut self, _i: usize) -> Option<Yuv> {
         self.frame()
     }
 }

@@ -5,38 +5,6 @@ use iced::{Element, Sandbox, Settings, Size};
 
 use decoders::container::mp4;
 use hacky_widget::Video;
-use vanilla_iced::yuv;
-
-pub struct Frame(decoders::video::h264::SomeYuv);
-
-impl From<Frame> for yuv::Frame<Vec<u8>> {
-    fn from(Frame(data): Frame) -> Self {
-        Self {
-            strides: yuv::Strides {
-                y: data.strides.0,
-                u: data.strides.1,
-                v: data.strides.2,
-            },
-            dimensions: yuv::Dimensions {
-                y: yuv::Size {
-                    width: data.y_dim.0 as f32,
-                    height: data.y_dim.1 as f32,
-                },
-                u: yuv::Size {
-                    width: data.u_dim.0 as f32,
-                    height: data.u_dim.1 as f32,
-                },
-                v: yuv::Size {
-                    width: data.v_dim.0 as f32,
-                    height: data.v_dim.1 as f32,
-                },
-            },
-            y: data.y,
-            u: data.u,
-            v: data.v,
-        }
-    }
-}
 
 pub fn main() -> iced::Result {
     Player::run(Settings {

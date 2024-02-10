@@ -7,7 +7,7 @@ use iced::{
 mod instance;
 mod uniforms;
 
-use super::Frame;
+use super::Renderable;
 use crate::yuv::Size;
 use instance::Instance;
 pub use uniforms::Uniforms;
@@ -43,7 +43,7 @@ impl Pipeline {
                 label: Some("yuv uniform bind group layout"),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
+                    visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
@@ -215,7 +215,7 @@ impl Pipeline {
         queue.write_buffer(&self.uniforms_buffer, 0, bytemuck::bytes_of(uniforms));
     }
 
-    pub fn update_frame<T: AsRef<[u8]>>(&mut self, queue: &wgpu::Queue, frame: &Frame<T>) {
+    pub fn update_frame(&mut self, queue: &wgpu::Queue, yuv: &Renderable) {
         queue.write_texture(
             wgpu::ImageCopyTexture {
                 texture: &self.texture,
@@ -223,15 +223,15 @@ impl Pipeline {
                 origin: wgpu::Origin3d { x: 0, y: 0, z: 0 },
                 aspect: wgpu::TextureAspect::default(),
             },
-            frame.y.as_ref(),
+            yuv.y(),
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: Some(frame.strides.y as u32),
-                rows_per_image: Some(frame.dimensions.y.height as u32),
+                bytes_per_row: Some((yuv.y().len() as f32 / yuv.dimensions().height) as u32),
+                rows_per_image: Some(yuv.dimensions().height as u32),
             },
             wgpu::Extent3d {
-                width: frame.dimensions.y.width as u32,
-                height: frame.dimensions.y.height as u32,
+                width: yuv.dimensions().width as u32,
+                height: yuv.dimensions().height as u32,
                 depth_or_array_layers: 1,
             },
         );
@@ -243,15 +243,17 @@ impl Pipeline {
                 origin: wgpu::Origin3d { x: 0, y: 0, z: 1 },
                 aspect: wgpu::TextureAspect::default(),
             },
-            frame.u.as_ref(),
+            yuv.u(),
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: Some(frame.strides.u as u32),
-                rows_per_image: Some(frame.dimensions.u.height as u32),
+                bytes_per_row: Some(
+                    (yuv.y().len() as f32 / yuv.dimensions().height / yuv.sampling_factor()) as u32,
+                ),
+                rows_per_image: Some((yuv.dimensions().height / yuv.sampling_factor()) as u32),
             },
             wgpu::Extent3d {
-                width: frame.dimensions.u.width as u32,
-                height: frame.dimensions.u.height as u32,
+                width: (yuv.dimensions().width / yuv.sampling_factor()) as u32,
+                height: (yuv.dimensions().height / yuv.sampling_factor()) as u32,
                 depth_or_array_layers: 1,
             },
         );
@@ -263,15 +265,17 @@ impl Pipeline {
                 origin: wgpu::Origin3d { x: 0, y: 0, z: 2 },
                 aspect: wgpu::TextureAspect::default(),
             },
-            frame.v.as_ref(),
+            yuv.v(),
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: Some(frame.strides.v as u32),
-                rows_per_image: Some(frame.dimensions.v.height as u32),
+                bytes_per_row: Some(
+                    (yuv.y().len() as f32 / yuv.dimensions().height / yuv.sampling_factor()) as u32,
+                ),
+                rows_per_image: Some((yuv.dimensions().height / yuv.sampling_factor()) as u32),
             },
             wgpu::Extent3d {
-                width: frame.dimensions.v.width as u32,
-                height: frame.dimensions.v.height as u32,
+                width: (yuv.dimensions().width / yuv.sampling_factor()) as u32,
+                height: (yuv.dimensions().height / yuv.sampling_factor()) as u32,
                 depth_or_array_layers: 1,
             },
         );

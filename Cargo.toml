@@ -18,6 +18,7 @@ bytemuck.workspace = true
 glam = { workspace = true, features = ["bytemuck"] }
 iced.workspace = true
 iced_wgpu.workspace = true
+itertools.workspace = true
 
 [workspace]
 resolver = "2"
@@ -44,4 +45,5 @@ bytemuck = { version = "1.0", features = ["derive"] }
 glam = "0.24"
 iced = { git = "https://github.com/iced-rs/iced", features = ["advanced", "image", "lazy", "wgpu"] }
 iced_wgpu = { git = "https://github.com/iced-rs/iced" }
+itertools = "0.12"
 thiserror = "1.0"

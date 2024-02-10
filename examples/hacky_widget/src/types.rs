@@ -1,9 +1,4 @@
-use vanilla_iced::yuv;
-
-pub trait VideoStream<T>
-where
-    T: AsRef<[u8]>,
-{
+pub trait VideoStream {
     /// Width of each frame in px
     fn width(&self) -> u32;
 
@@ -15,5 +10,5 @@ where
 
     /// Returns the YUV data for the requested frame,
     /// or None if the stream is exhausted
-    fn next(&mut self, i: usize) -> Option<yuv::Frame<T>>;
+    fn next(&mut self, i: usize) -> Option<vanilla_iced::Yuv>;
 }
