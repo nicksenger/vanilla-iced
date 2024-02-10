@@ -82,7 +82,8 @@ impl Player {
                                 u: n / 360,
                                 v: n / 360,
                             },
-                            dimensions: yuv::Dimensions { // TODO: get these from gstreamer
+                            dimensions: yuv::Dimensions {
+                                // TODO: get these from gstreamer
                                 y: yuv::Size {
                                     width: 1280.0,
                                     height: 720.0,

@@ -144,15 +144,15 @@ where
 
         if let (Some(&first), Some(&last)) = (state.first_draw.as_ref(), state.last_draw.as_ref()) {
             if let Event::Window(_id, window::Event::RedrawRequested(now)) = event {
-                    if now.saturating_duration_since(last) >= self.frame_duration {
-                        state.last_draw = Some(now);
-                        progress_frame(
-                            ((now - first).as_secs_f32()
-                                / (self.frame_duration.as_secs_f32() / PLAYBACK_RATE))
-                                as usize,
-                        );
-                    }
-                    shell.request_redraw(RedrawRequest::At(now + self.frame_duration));
+                if now.saturating_duration_since(last) >= self.frame_duration {
+                    state.last_draw = Some(now);
+                    progress_frame(
+                        ((now - first).as_secs_f32()
+                            / (self.frame_duration.as_secs_f32() / PLAYBACK_RATE))
+                            as usize,
+                    );
+                }
+                shell.request_redraw(RedrawRequest::At(now + self.frame_duration));
             }
         } else {
             let now = Instant::now();
