@@ -4,7 +4,7 @@
 
 Custom shader for rendering [YUV](https://en.wikipedia.org/wiki/Y%E2%80%B2UV) / [YCbCr](https://en.wikipedia.org/wiki/YCbCr) data using [Iced](https://github.com/iced-rs/iced.git). 
 
-Check out the [examples](./examples) to see it in action, and please note the [copyright disclaimer](./_sample_data/COPYRIGHT_DISCLAIMER.md) in the sample data directory.
+Check out the [examples](./examples) to see it in action!
 
 
 ### Usage
