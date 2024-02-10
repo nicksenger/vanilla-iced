@@ -6,7 +6,7 @@ use iced::advanced::renderer;
 use iced::advanced::widget::tree::{self, Tree};
 use iced::advanced::{Clipboard, Layout, Shell, Widget};
 use iced::event::{self, Event};
-use iced::widget::{Component, Shader, Space};
+use iced::widget::Shader;
 use iced::window::RedrawRequest;
 use iced::{window, Size};
 use iced::{Element, Length, Rectangle};
@@ -19,31 +19,6 @@ pub use types::VideoStream;
 
 const PLAYBACK_RATE: f32 = 1.0;
 
-struct Inner<'a, T> {
-    program: Option<&'a yuv::Program<T>>,
-}
-
-impl<'a, T, Message> Component<Message> for Inner<'a, T>
-where
-    T: AsRef<[u8]> + std::fmt::Debug + Send + Sync + 'static,
-{
-    type State = ();
-    type Event = ();
-
-    fn update(&mut self, _state: &mut Self::State, _event: Self::Event) -> Option<Message> {
-        None
-    }
-
-    fn view(&self, _state: &Self::State) -> Element<'_, Self::Event> {
-        if let Some(program) = self.program {
-            Shader::new(program).into()
-        } else {
-            Space::new(0, 0).into()
-        }
-    }
-}
-
-#[allow(missing_debug_implementations)]
 pub struct Video<'a, T> {
     width: Length,
     height: Length,

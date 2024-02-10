@@ -1,4 +1,4 @@
-This example demonstrates the use of Vanilla Iced in combination with a custom demuxing/decoding pipeline built with [mp4-rust](https://github.com/alfg/mp4-rust) and [openh264-rs](https://github.com/ralfbiedert/openh264-rs), as well as a [hacky widget](../hacky_widget/README.md), to render video in Iced.
+This example demonstrates the use of Vanilla Iced in combination with a custom demuxing/decoding pipeline built with [mp4-rust](https://github.com/alfg/mp4-rust) and [openh264-rs](https://github.com/ralfbiedert/openh264-rs), as well as a [hacky widget](../hacky_widgetd), to render video in Iced.
 
 To run the example use `cargo run --features bin` from this directory.
 

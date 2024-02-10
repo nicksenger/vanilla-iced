@@ -1,4 +1,4 @@
-This example demonstrates the use of Vanilla Iced in combination with [gstreamer-rs](https://github.com/sdroege/gstreamer-rs) and a [hacky widget](../hacky_widget/README.md) to play video and audio within an Iced application.
+This example demonstrates the use of Vanilla Iced in combination with [gstreamer-rs](https://github.com/sdroege/gstreamer-rs) and a [hacky widget](../hacky_widget) to play video and audio within an Iced application.
 
 To run the example use `cargo run` from this directory.
 
