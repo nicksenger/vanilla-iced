@@ -6,6 +6,16 @@ use num_traits::cast::ToPrimitive;
 
 use vanilla_iced::{Format, Size, Yuv};
 
+const FORMAT: Format = Format::NV12;
+
+fn gstreamer_format_code(format: Format) -> &'static str {
+    match format {
+        Format::I420 => "I420",
+        Format::NV12 => "NV12",
+        Format::Y444 => "Y444",
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Bytes(Arc<Vec<u8>>);
 
@@ -37,7 +47,13 @@ impl Player {
             .to_path_buf();
         path.push("_sample_data/av1.mp4");
 
-        let source = gstreamer::parse_launch(&format!("playbin uri=\"file:///{}\" video-sink=\"videoconvert ! appsink name=app_sink caps=video/x-raw,format=Y444\"", path.to_str().expect("path").replace('\\', "/")))?;
+        let source = gstreamer::parse_launch(
+            &format!(
+                "playbin uri=\"file:///{}\" video-sink=\"videoconvert ! appsink name=app_sink caps=video/x-raw,format={}\"",
+                path.to_str().expect("path").replace('\\', "/"),
+                gstreamer_format_code(FORMAT)
+            )
+        )?;
         let source = source
             .downcast::<gstreamer::Bin>()
             .map_err(|_| anyhow!("downcast bin"))?;
@@ -76,11 +92,11 @@ impl Player {
                     let data = map.as_slice();
 
                     *frame_ref.lock().map_err(|_| gstreamer::FlowError::Error)? = Some(Yuv {
-                        format: Format::Y444,
+                        format: FORMAT,
                         // TODO: get this from gstreamer
                         dimensions: Size {
-                            width: 1280.0,
-                            height: 720.0,
+                            width: 1280,
+                            height: 720,
                         },
                         data: data.to_vec(),
                     });
@@ -127,12 +143,12 @@ impl Drop for Player {
 }
 
 impl hacky_widget::VideoStream for Player {
-    fn width(&self) -> u32 {
-        self.width
+    fn format(&self) -> vanilla_iced::Format {
+        FORMAT
     }
 
-    fn height(&self) -> u32 {
-        self.height
+    fn dimensions(&self) -> vanilla_iced::Size<u32> {
+        (self.width, self.height).into()
     }
 
     fn frame_rate(&self) -> f64 {

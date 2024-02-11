@@ -1,9 +1,9 @@
 pub trait VideoStream {
-    /// Width of each frame in px
-    fn width(&self) -> u32;
+    /// Format of each video frame
+    fn format(&self) -> vanilla_iced::Format;
 
-    /// Height of each frame in px
-    fn height(&self) -> u32;
+    /// Size of the video
+    fn dimensions(&self) -> vanilla_iced::Size<u32>;
 
     /// Frame rate in fps
     fn frame_rate(&self) -> f64;

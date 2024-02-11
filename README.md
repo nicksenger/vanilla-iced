@@ -35,7 +35,9 @@ fn update(&mut self, message: Message) -> iced::Command<Message> {
 
 - [x] Render I420
 - [x] Render Y444
-- [ ] Support other common YUV formats
+- [ ] Support other common 4:2:0 YUV formats by conversion to I420
+    - [x] NV12
+- [ ] Support other common 4:4:4 YUV formats by conversion to Y444
 
 ### Motivations
 

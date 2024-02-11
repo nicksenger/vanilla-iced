@@ -10,8 +10,8 @@ pub fn main() -> iced::Result {
     Player::run(Settings {
         window: iced::window::Settings {
             size: Size {
-                width: 640.0,
-                height: 360.0,
+                width: 1280.0,
+                height: 720.0,
             },
             ..Default::default()
         },

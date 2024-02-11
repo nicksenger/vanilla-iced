@@ -40,14 +40,15 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-    let y = textureSample(yuv_texture, yuv_sampler, input.uv, 0);
-    let u = textureSample(yuv_texture, yuv_sampler, input.uv / uniforms.sampling_factor, 1);
-    let v = textureSample(yuv_texture, yuv_sampler, input.uv / uniforms.sampling_factor, 2);
+    // https://learn.microsoft.com/en-us/windows/win32/medfound/recommended-8-bit-yuv-formats-for-video-rendering#converting-8-bit-yuv-to-rgb888
+    let c = textureSample(yuv_texture, yuv_sampler, input.uv, 0).x - 0.062745;
+    let d = textureSample(yuv_texture, yuv_sampler, input.uv / uniforms.sampling_factor, 1).x - 0.5;
+    let e = textureSample(yuv_texture, yuv_sampler, input.uv / uniforms.sampling_factor, 2).x - 0.5;
 
     return vec4<f32>(
-        clamp((1.164 * (y.x - 0.0627) + 1.596 * (v.x - 0.5)), 0.0, 1.0),
-        clamp((1.164 * (y.x - 0.0627) - 0.813 * (v.x - 0.5) - 0.391 * (u.x - 0.5)), 0.0, 1.0),
-        clamp((1.164 * (y.x - 0.0627) + 2.018 * (u.x - 0.5)), 0.0, 1.0),
+        clamp(c + 1.596027 * e, 0.0, 1.0),
+        clamp(c - 0.391762 * d - 0.812968 * e, 0.0, 1.0),
+        clamp(c + 2.017232 * d, 0.0, 1.0),
         1.0
     );
 }
