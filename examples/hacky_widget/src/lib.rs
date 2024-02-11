@@ -25,8 +25,6 @@ pub struct Video<'a> {
     height: Length,
     frame_duration: Duration,
     content: Box<dyn VideoStream + 'a>,
-    video_width: u32,
-    video_height: u32,
 }
 
 impl<'a> Video<'a> {
@@ -35,8 +33,6 @@ impl<'a> Video<'a> {
             width: Length::Fill,
             height: Length::Fill,
             frame_duration: Duration::from_secs_f64(1.0 / content.frame_rate()),
-            video_width: content.width(),
-            video_height: content.height(),
             content: Box::new(content),
         }
     }
@@ -63,10 +59,7 @@ where
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(State::new(
-            self.video_width as f32,
-            self.video_height as f32,
-        ))
+        tree::State::new(State::new(self.content.format(), self.content.dimensions()))
     }
 
     fn size(&self) -> Size<Length> {
@@ -179,12 +172,12 @@ struct State {
 }
 
 impl State {
-    fn new(image_width: f32, image_height: f32) -> Self {
+    fn new(format: Format, dimensions: vanilla_iced::Size<u32>) -> Self {
         Self {
             program: Program::new(Yuv {
-                format: Format::Y444,
+                format,
                 data: vec![],
-                dimensions: (image_width, image_height).into(),
+                dimensions,
             }),
             last_draw: None,
             first_draw: None,

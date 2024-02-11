@@ -12,7 +12,12 @@ pub struct Uniforms {
 }
 
 impl Uniforms {
-    pub fn new(size: Size, image_dimensions: Size, target_size: Size, sampling_factor: f32) -> Self {
+    pub fn new(
+        size: Size,
+        image_dimensions: Size,
+        target_size: Size,
+        sampling_factor: f32,
+    ) -> Self {
         let image_dimensions: Vec2 = (image_dimensions.width, image_dimensions.height).into();
 
         let scale = (

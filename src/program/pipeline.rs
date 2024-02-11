@@ -26,7 +26,7 @@ impl Pipeline {
     pub fn new(
         device: &wgpu::Device,
         format: wgpu::TextureFormat,
-        image_dimensions: Size,
+        image_dimensions: Size<u32>,
         target_size: Size,
         size: Size,
         scale_factor: f32,
@@ -71,8 +71,8 @@ impl Pipeline {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("yuv texture"),
             size: wgpu::Extent3d {
-                width: image_dimensions.width as u32,
-                height: image_dimensions.height as u32,
+                width: image_dimensions.width,
+                height: image_dimensions.height,
                 depth_or_array_layers: 3,
             },
             mip_level_count: 1,
@@ -136,7 +136,7 @@ impl Pipeline {
                     resource: wgpu::BindingResource::Sampler(&sampler),
                 },
             ],
-            label: Some("diffuse_bind_group"),
+            label: Some("texture bind group"),
         });
 
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -197,7 +197,11 @@ impl Pipeline {
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("yuv vertex buffer"),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            contents: bytemuck::cast_slice(&Instance::frame(size, image_dimensions, target_size)),
+            contents: bytemuck::cast_slice(&Instance::frame(
+                size,
+                image_dimensions.into(),
+                target_size,
+            )),
         });
 
         Self {
@@ -226,15 +230,18 @@ impl Pipeline {
             yuv.y(),
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: Some((yuv.y().len() as f32 / yuv.dimensions().height) as u32),
-                rows_per_image: Some(yuv.dimensions().height as u32),
+                bytes_per_row: Some(yuv.y().len() as u32 / yuv.dimensions().height),
+                rows_per_image: Some(yuv.dimensions().height),
             },
             wgpu::Extent3d {
-                width: yuv.dimensions().width as u32,
-                height: yuv.dimensions().height as u32,
+                width: yuv.dimensions().width,
+                height: yuv.dimensions().height,
                 depth_or_array_layers: 1,
             },
         );
+
+        let downsampled_width = yuv.dimensions().width / yuv.downsampling_factor() as u32;
+        let downsampled_height = yuv.dimensions().height / yuv.downsampling_factor() as u32;
 
         queue.write_texture(
             wgpu::ImageCopyTexture {
@@ -247,13 +254,15 @@ impl Pipeline {
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(
-                    (yuv.y().len() as f32 / yuv.dimensions().height / yuv.sampling_factor()) as u32,
+                    yuv.y().len() as u32
+                        / yuv.dimensions().height
+                        / yuv.downsampling_factor() as u32,
                 ),
-                rows_per_image: Some((yuv.dimensions().height / yuv.sampling_factor()) as u32),
+                rows_per_image: Some(downsampled_height),
             },
             wgpu::Extent3d {
-                width: (yuv.dimensions().width / yuv.sampling_factor()) as u32,
-                height: (yuv.dimensions().height / yuv.sampling_factor()) as u32,
+                width: downsampled_width,
+                height: downsampled_height,
                 depth_or_array_layers: 1,
             },
         );
@@ -269,13 +278,15 @@ impl Pipeline {
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(
-                    (yuv.y().len() as f32 / yuv.dimensions().height / yuv.sampling_factor()) as u32,
+                    yuv.y().len() as u32
+                        / yuv.dimensions().height
+                        / yuv.downsampling_factor() as u32,
                 ),
-                rows_per_image: Some((yuv.dimensions().height / yuv.sampling_factor()) as u32),
+                rows_per_image: Some(downsampled_height),
             },
             wgpu::Extent3d {
-                width: (yuv.dimensions().width / yuv.sampling_factor()) as u32,
-                height: (yuv.dimensions().height / yuv.sampling_factor()) as u32,
+                width: downsampled_width,
+                height: downsampled_height,
                 depth_or_array_layers: 1,
             },
         );

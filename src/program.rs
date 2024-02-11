@@ -15,7 +15,7 @@ use self::pipeline::Uniforms;
 use crate::{Renderable, Size, Yuv};
 
 pub struct Program {
-    dimensions: Size,
+    dimensions: Size<u32>,
     sampling_factor: f32,
     data: RefCell<Option<Renderable>>,
 }
@@ -26,7 +26,7 @@ impl Program {
 
         Self {
             dimensions: renderable.dimensions(),
-            sampling_factor: renderable.sampling_factor(),
+            sampling_factor: renderable.downsampling_factor(),
             data: RefCell::new(Some(renderable)),
         }
     }
@@ -47,10 +47,7 @@ impl<Message> shader::Program<Message> for Program {
         bounds: Rectangle,
     ) -> Self::Primitive {
         Primitive(Mutex::new(match self.data.borrow_mut().take() {
-            Some(yuv) => State::Pending {
-                yuv,
-                bounds,
-            },
+            Some(yuv) => State::Pending { yuv, bounds },
 
             _ => State::Prepared {
                 bounds,
@@ -71,7 +68,7 @@ enum State {
         bounds: Rectangle,
     },
     Prepared {
-        image_dimensions: Size,
+        image_dimensions: Size<u32>,
         sampling_factor: f32,
         bounds: Rectangle,
     },
@@ -84,7 +81,7 @@ impl State {
         }
     }
 
-    fn image_dimensions(&self) -> Size {
+    fn image_dimensions(&self) -> Size<u32> {
         match self {
             Self::Prepared {
                 image_dimensions, ..
@@ -98,7 +95,7 @@ impl State {
             Self::Prepared {
                 sampling_factor, ..
             } => *sampling_factor,
-            Self::Pending { yuv, .. } => yuv.sampling_factor(),
+            Self::Pending { yuv, .. } => yuv.downsampling_factor(),
         }
     }
 }
@@ -141,10 +138,21 @@ impl shader::Primitive for Primitive {
 
                 pipeline.update_uniforms(
                     queue,
-                    &Uniforms::new(size, yuv.dimensions(), target_size, yuv.sampling_factor()),
+                    &Uniforms::new(
+                        size,
+                        yuv.dimensions().into(),
+                        target_size,
+                        yuv.downsampling_factor(),
+                    ),
                 );
                 pipeline.update_frame(queue, yuv);
-                pipeline.update_vertices(queue, yuv.dimensions(), size, target_size, scale_factor)
+                pipeline.update_vertices(
+                    queue,
+                    yuv.dimensions().into(),
+                    size,
+                    target_size,
+                    scale_factor,
+                )
             }
 
             State::Prepared {
@@ -156,9 +164,20 @@ impl shader::Primitive for Primitive {
 
                 pipeline.update_uniforms(
                     queue,
-                    &Uniforms::new(size, *image_dimensions, target_size, *sampling_factor),
+                    &Uniforms::new(
+                        size,
+                        (*image_dimensions).into(),
+                        target_size,
+                        *sampling_factor,
+                    ),
                 );
-                pipeline.update_vertices(queue, *image_dimensions, size, target_size, scale_factor);
+                pipeline.update_vertices(
+                    queue,
+                    (*image_dimensions).into(),
+                    size,
+                    target_size,
+                    scale_factor,
+                );
             }
         }
 

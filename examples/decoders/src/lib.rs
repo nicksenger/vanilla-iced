@@ -8,12 +8,12 @@ mod widget {
     use vanilla_iced::{Format, Size, Yuv};
 
     impl<'a> VideoStream for crate::video::h264::Stream<'a> {
-        fn width(&self) -> u32 {
-            self.width()
+        fn format(&self) -> vanilla_iced::Format {
+            vanilla_iced::Format::I420
         }
 
-        fn height(&self) -> u32 {
-            self.height()
+        fn dimensions(&self) -> vanilla_iced::Size<u32> {
+            (self.width(), self.height()).into()
         }
 
         fn frame_rate(&self) -> f64 {
@@ -34,8 +34,8 @@ mod widget {
             Self {
                 format: Format::I420,
                 dimensions: Size {
-                    width: data.y_dim.0 as f32,
-                    height: data.y_dim.1 as f32,
+                    width: data.y_dim.0 as u32,
+                    height: data.y_dim.1 as u32,
                 },
                 data: bytes,
             }

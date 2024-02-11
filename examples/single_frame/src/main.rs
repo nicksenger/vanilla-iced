@@ -23,8 +23,8 @@ impl From<MyYuv> for Yuv {
         Self {
             format: Format::I420,
             dimensions: Size {
-                width: data.y_dim.0 as f32,
-                height: data.y_dim.1 as f32,
+                width: data.y_dim.0 as u32,
+                height: data.y_dim.1 as u32,
             },
             data: bytes,
         }
