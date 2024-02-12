@@ -1,5 +1,5 @@
 use glam::Vec2;
-use iced::widget::shader::wgpu;
+use iced::{widget::shader::wgpu, Rectangle};
 
 use crate::Size;
 
@@ -7,15 +7,11 @@ use crate::Size;
 #[repr(C)]
 pub struct Instance {
     pub position: Vec2,
-    pub image_dimensions: Vec2,
-    pub scale: Vec2,
 }
 
 impl Instance {
-    const ATTRIBS: [wgpu::VertexAttribute; 3] = wgpu::vertex_attr_array![
+    const ATTRIBS: [wgpu::VertexAttribute; 1] = wgpu::vertex_attr_array![
         0 => Float32x2,
-        1 => Float32x2,
-        2 => Float32x2,
     ];
 
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
@@ -26,23 +22,13 @@ impl Instance {
         }
     }
 
-    pub fn frame(size: Size, image_dimensions: Size, target_size: Size) -> [Self; 1] {
-        let scale = (
-            image_dimensions.width / target_size.width,
-            image_dimensions.height / target_size.height,
-        )
-            .into();
+    pub fn frame(bounds: Rectangle, target_size: Size) -> [Self; 1] {
         let position = [
-            -1.0,
-            (target_size.height - size.height * 2.0) / target_size.height,
+            -1.0 + (bounds.x / target_size.width) * 2.0,
+            -1.0 + ((target_size.height - (bounds.height + bounds.y)) / target_size.height) * 2.0,
         ]
         .into();
-        let image_dimensions = (image_dimensions.width, image_dimensions.height).into();
 
-        [Self {
-            position,
-            image_dimensions,
-            scale,
-        }]
+        [Self { position }]
     }
 }

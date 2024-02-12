@@ -1,7 +1,6 @@
 struct Uniforms {
     sampling_factor: vec2<f32>,
     size: vec2<f32>,
-    image_dimensions: vec2<f32>,
     scale: vec2<f32>,
 }
 
@@ -24,7 +23,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     var out: VertexOutput;
 
     let v_pos = vertex_position(input.vertex_index);
-    out.uv = vec2<f32>(v_pos.x * uniforms.image_dimensions.x, 1.0 - (v_pos.y * uniforms.image_dimensions.y));
+    out.uv = vec2<f32>(v_pos.x * uniforms.scale.x, 1.0 - (v_pos.y * uniforms.scale.y));
 
     var transform: mat4x4<f32> = mat4x4<f32>(
         vec4<f32>(uniforms.size.x, 0.0, 0.0, 0.0),
@@ -33,7 +32,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
         vec4<f32>(input.pos, 0.0, 1.0)
     );
 
-    out.position = transform * vec4<f32>(v_pos * uniforms.scale * 2.0, 0.0, 1.0);
+    out.position = transform * vec4<f32>(v_pos, 0.0, 1.0);
 
     return out;
 }

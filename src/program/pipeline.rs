@@ -27,8 +27,8 @@ impl Pipeline {
         device: &wgpu::Device,
         format: wgpu::TextureFormat,
         image_dimensions: Size<u32>,
+        bounds: Rectangle,
         target_size: Size,
-        size: Size,
         scale_factor: f32,
     ) -> Self {
         let uniforms_buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -95,9 +95,9 @@ impl Pipeline {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Nearest,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
 
@@ -197,11 +197,7 @@ impl Pipeline {
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("yuv vertex buffer"),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            contents: bytemuck::cast_slice(&Instance::frame(
-                size,
-                image_dimensions.into(),
-                target_size,
-            )),
+            contents: bytemuck::cast_slice(&Instance::frame(bounds, target_size)),
         });
 
         Self {
@@ -295,8 +291,7 @@ impl Pipeline {
     pub fn update_vertices(
         &mut self,
         queue: &wgpu::Queue,
-        image_dimensions: Size,
-        size: Size,
+        bounds: Rectangle,
         target_size: Size,
         scale_factor: f32,
     ) {
@@ -304,7 +299,7 @@ impl Pipeline {
         queue.write_buffer(
             &self.vertex_buffer,
             0,
-            bytemuck::bytes_of(&Instance::frame(size, image_dimensions, target_size)),
+            bytemuck::bytes_of(&Instance::frame(bounds, target_size)),
         );
     }
 
@@ -330,8 +325,8 @@ impl Pipeline {
         });
 
         pass.set_scissor_rect(
-            bounds.x as u32,
-            bounds.y as u32,
+            (bounds.x * self.scale_factor) as u32,
+            (bounds.y * self.scale_factor) as u32,
             (bounds.width * self.scale_factor) as u32,
             (bounds.height * self.scale_factor) as u32,
         );

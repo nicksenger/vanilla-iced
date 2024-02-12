@@ -115,6 +115,17 @@ impl std::ops::Mul<f32> for Size<f32> {
     }
 }
 
+impl std::ops::Div<f32> for Size<f32> {
+    type Output = Self;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Self {
+            width: self.width / rhs,
+            height: self.height / rhs,
+        }
+    }
+}
+
 impl From<Size<u32>> for Size<f32> {
     fn from(size: Size<u32>) -> Self {
         (size.width as f32, size.height as f32).into()

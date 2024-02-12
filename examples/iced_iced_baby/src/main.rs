@@ -1,4 +1,4 @@
-use iced::{Element, Sandbox, Settings, Size};
+use iced::{theme, widget::container, Element, Sandbox, Settings, Size};
 
 use hacky_widget::{Video, VideoStream};
 
@@ -43,6 +43,12 @@ impl Sandbox for App {
             std::thread::sleep(std::time::Duration::from_millis(100));
         }
 
-        Video::new(player).into()
+        container(
+            container(Video::new(player))
+                .padding(50)
+                .style(theme::Container::Box),
+        )
+        .padding(50)
+        .into()
     }
 }

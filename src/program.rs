@@ -115,11 +115,8 @@ impl shader::Primitive for Primitive {
             return;
         };
 
-        let size = Size::from(bounds.size()) * scale_factor;
-        let target_size = Size {
-            width: target_size.width as f32,
-            height: target_size.height as f32,
-        };
+        let size = Size::from(bounds.size());
+        let target_size = Size::from((target_size.width as f32, target_size.height as f32)) / scale_factor;
 
         match state.deref() {
             State::Pending { yuv, .. } => {
@@ -128,8 +125,8 @@ impl shader::Primitive for Primitive {
                         device,
                         format,
                         yuv.dimensions(),
+                        bounds,
                         target_size,
-                        size,
                         scale_factor,
                     ));
                 }
@@ -141,18 +138,12 @@ impl shader::Primitive for Primitive {
                     &Uniforms::new(
                         size,
                         yuv.dimensions().into(),
-                        target_size,
                         yuv.downsampling_factor(),
+                        target_size,
                     ),
                 );
                 pipeline.update_frame(queue, yuv);
-                pipeline.update_vertices(
-                    queue,
-                    yuv.dimensions().into(),
-                    size,
-                    target_size,
-                    scale_factor,
-                )
+                pipeline.update_vertices(queue, bounds, target_size, scale_factor)
             }
 
             State::Prepared {
@@ -167,17 +158,11 @@ impl shader::Primitive for Primitive {
                     &Uniforms::new(
                         size,
                         (*image_dimensions).into(),
-                        target_size,
                         *sampling_factor,
+                        target_size,
                     ),
                 );
-                pipeline.update_vertices(
-                    queue,
-                    (*image_dimensions).into(),
-                    size,
-                    target_size,
-                    scale_factor,
-                );
+                pipeline.update_vertices(queue, bounds, target_size, scale_factor);
             }
         }
 
