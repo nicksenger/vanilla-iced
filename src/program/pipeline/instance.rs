@@ -26,17 +26,13 @@ impl Instance {
         }
     }
 
-    pub fn frame(size: Size, image_dimensions: Size, target_size: Size) -> [Self; 1] {
+    pub fn frame(size: Size, image_dimensions: Size) -> [Self; 1] {
         let scale = (
-            image_dimensions.width / target_size.width,
-            image_dimensions.height / target_size.height,
+            image_dimensions.width / size.width,
+            image_dimensions.height / size.height,
         )
             .into();
-        let position = [
-            -1.0,
-            (target_size.height - size.height * 2.0) / target_size.height,
-        ]
-        .into();
+        let position = [-1.0, (size.height - size.height * 2.0) / size.height].into();
         let image_dimensions = (image_dimensions.width, image_dimensions.height).into();
 
         [Self {

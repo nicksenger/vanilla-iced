@@ -27,7 +27,6 @@ impl Pipeline {
         device: &wgpu::Device,
         format: wgpu::TextureFormat,
         image_dimensions: Size<u32>,
-        target_size: Size,
         size: Size,
         scale_factor: f32,
     ) -> Self {
@@ -197,11 +196,7 @@ impl Pipeline {
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("yuv vertex buffer"),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            contents: bytemuck::cast_slice(&Instance::frame(
-                size,
-                image_dimensions.into(),
-                target_size,
-            )),
+            contents: bytemuck::cast_slice(&Instance::frame(size, image_dimensions.into())),
         });
 
         Self {
@@ -297,14 +292,13 @@ impl Pipeline {
         queue: &wgpu::Queue,
         image_dimensions: Size,
         size: Size,
-        target_size: Size,
         scale_factor: f32,
     ) {
         self.scale_factor = scale_factor;
         queue.write_buffer(
             &self.vertex_buffer,
             0,
-            bytemuck::bytes_of(&Instance::frame(size, image_dimensions, target_size)),
+            bytemuck::bytes_of(&Instance::frame(size, image_dimensions)),
         );
     }
 

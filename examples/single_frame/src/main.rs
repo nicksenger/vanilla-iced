@@ -1,4 +1,8 @@
-use iced::{widget::shader, Element, Length, Sandbox, Settings};
+use iced::{
+    theme,
+    widget::{container, shader},
+    Element, Length, Sandbox, Settings,
+};
 use serde::{Deserialize, Serialize};
 
 use vanilla_iced::{Format, Program, Size, Yuv};
@@ -61,10 +65,13 @@ impl Sandbox for App {
 
         add_d(&mut yuv);
 
-        shader(Program::new(yuv.into()))
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
+        container(
+            shader(Program::new(yuv.into()))
+                .width(Length::Fill)
+                .height(Length::Fill),
+        )
+        .style(theme::Container::Box)
+        .into()
     }
 }
 

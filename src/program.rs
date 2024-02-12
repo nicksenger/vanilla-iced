@@ -107,7 +107,7 @@ impl shader::Primitive for Primitive {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         bounds: Rectangle,
-        target_size: iced::Size<u32>,
+        _target_size: iced::Size<u32>,
         scale_factor: f32,
         storage: &mut shader::Storage,
     ) {
@@ -115,11 +115,7 @@ impl shader::Primitive for Primitive {
             return;
         };
 
-        let size = Size::from(bounds.size()) * scale_factor;
-        let target_size = Size {
-            width: target_size.width as f32,
-            height: target_size.height as f32,
-        };
+        let size = Size::from(bounds.size());
 
         match state.deref() {
             State::Pending { yuv, .. } => {
@@ -128,7 +124,6 @@ impl shader::Primitive for Primitive {
                         device,
                         format,
                         yuv.dimensions(),
-                        target_size,
                         size,
                         scale_factor,
                     ));
@@ -138,21 +133,10 @@ impl shader::Primitive for Primitive {
 
                 pipeline.update_uniforms(
                     queue,
-                    &Uniforms::new(
-                        size,
-                        yuv.dimensions().into(),
-                        target_size,
-                        yuv.downsampling_factor(),
-                    ),
+                    &Uniforms::new(size, yuv.dimensions().into(), yuv.downsampling_factor()),
                 );
                 pipeline.update_frame(queue, yuv);
-                pipeline.update_vertices(
-                    queue,
-                    yuv.dimensions().into(),
-                    size,
-                    target_size,
-                    scale_factor,
-                )
+                pipeline.update_vertices(queue, yuv.dimensions().into(), size, scale_factor)
             }
 
             State::Prepared {
@@ -164,20 +148,9 @@ impl shader::Primitive for Primitive {
 
                 pipeline.update_uniforms(
                     queue,
-                    &Uniforms::new(
-                        size,
-                        (*image_dimensions).into(),
-                        target_size,
-                        *sampling_factor,
-                    ),
+                    &Uniforms::new(size, (*image_dimensions).into(), *sampling_factor),
                 );
-                pipeline.update_vertices(
-                    queue,
-                    (*image_dimensions).into(),
-                    size,
-                    target_size,
-                    scale_factor,
-                );
+                pipeline.update_vertices(queue, (*image_dimensions).into(), size, scale_factor);
             }
         }
 
